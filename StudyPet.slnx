@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/StudyPet.Api/StudyPet.Api.csproj" />
+    <Project Path="src/StudyPet.Application/StudyPet.Application.csproj" />
+    <Project Path="src/StudyPet.Domain/StudyPet.Domain.csproj" />
+    <Project Path="src/StudyPet.Infrastructure/StudyPet.Infrastructure.csproj" />
+  </Folder>
+</Solution>
