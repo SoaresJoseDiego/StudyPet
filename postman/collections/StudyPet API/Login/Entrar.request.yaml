@@ -1,0 +1,21 @@
+$kind: http-request
+method: POST
+url: '{{baseUrl}}/api/users/sign-in'
+order: 1000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "{{userEmail}}"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('status 200 com o usuário', () => {
+        pm.response.to.have.status(200);
+        pm.expect(pm.response.json().id).to.eql(pm.collectionVariables.get('userId'));
+      });

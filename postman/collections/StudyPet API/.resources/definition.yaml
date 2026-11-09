@@ -1,0 +1,22 @@
+$kind: collection
+name: StudyPet API
+description: Endpoints da API StudyPet. Rode a collection inteira em ordem ou comece por "Criar usuário"; cada criação salva o id usado pelas requisições seguintes.
+variables:
+  - key: userId
+    value: ''
+    description: Preenchido por "Criar usuário".
+  - key: userEmail
+    value: ''
+    description: Preenchido por "Criar usuário"; usado em "Entrar".
+  - key: courseId
+    value: ''
+    description: Preenchido por "Criar curso".
+  - key: moduleId
+    value: ''
+    description: Preenchido por "Criar módulo".
+  - key: lessonId
+    value: ''
+    description: Preenchido por "Criar aula".
+  - key: sessionId
+    value: ''
+    description: Preenchido por "Iniciar sessão".

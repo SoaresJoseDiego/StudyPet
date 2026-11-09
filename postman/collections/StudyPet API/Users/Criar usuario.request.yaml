@@ -1,0 +1,25 @@
+$kind: http-request
+name: Criar usuário
+method: POST
+url: '{{baseUrl}}/api/users'
+order: 1000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "displayName": "Usuário Teste",
+      "email": "teste+{{$timestamp}}@studypet.local",
+      "characterName": "Pip"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('status 201', () => pm.response.to.have.status(201));
+      if (pm.response.code === 201) {
+        pm.collectionVariables.set('userId', pm.response.json().id);
+        pm.collectionVariables.set('userEmail', pm.response.json().email);
+      }

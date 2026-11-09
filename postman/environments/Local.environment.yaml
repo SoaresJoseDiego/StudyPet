@@ -1,0 +1,7 @@
+name: Local
+values:
+  - key: baseUrl
+    value: 'http://localhost:5278'
+    enabled: true
+    type: default
+    description: API rodando com dotnet run (perfil http).

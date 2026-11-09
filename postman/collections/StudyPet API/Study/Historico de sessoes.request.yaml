@@ -1,0 +1,19 @@
+$kind: http-request
+name: 'Histórico de sessões'
+method: GET
+url: '{{baseUrl}}/api/users/:userId/study-sessions?take=20'
+order: 5000
+pathVariables:
+  - key: userId
+    value: '{{userId}}'
+queryParams:
+  - key: take
+    value: '20'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('status 200 com lista', () => {
+        pm.response.to.have.status(200);
+        pm.expect(pm.response.json()).to.be.an('array');
+      });

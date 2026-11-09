@@ -1,0 +1,27 @@
+$kind: http-request
+name: 'Criar módulo'
+method: POST
+url: '{{baseUrl}}/api/users/:userId/courses/:courseId/modules'
+order: 2000
+pathVariables:
+  - key: userId
+    value: '{{userId}}'
+  - key: courseId
+    value: '{{courseId}}'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "title": "Fundamentos"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('status 201', () => pm.response.to.have.status(201));
+      if (pm.response.code === 201) {
+        pm.collectionVariables.set('moduleId', pm.response.json().id);
+      }

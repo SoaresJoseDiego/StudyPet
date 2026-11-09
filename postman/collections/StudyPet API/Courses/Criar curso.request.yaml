@@ -1,0 +1,37 @@
+$kind: http-request
+description: 'Cria o curso com módulos e aulas. Categoria: Faculdade, CursoOnline, Cursinho, Livro ou Outro. Cor: verde, azul, pessego ou lilas.'
+method: POST
+url: '{{baseUrl}}/api/users/:userId/courses'
+order: 1000
+pathVariables:
+  - key: userId
+    value: '{{userId}}'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "title": "ASP.NET Core do zero",
+      "category": "CursoOnline",
+      "color": "azul",
+      "instructor": "Fulano",
+      "provider": "Udemy",
+      "sourceUrl": "https://www.udemy.com/course/aspnet-core-do-zero/",
+      "weeklyGoalMinutes": 180,
+      "modules": [
+        { "title": "Fundamentos", "lessons": ["Criando o projeto", "Controllers", "Rotas"] }
+      ]
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("status 201 com módulos e aulas", () => {
+        pm.response.to.have.status(201);
+        pm.expect(pm.response.json().lessons).to.eql(3);
+      });
+      if (pm.response.code === 201) {
+        pm.collectionVariables.set("courseId", pm.response.json().id);
+      }

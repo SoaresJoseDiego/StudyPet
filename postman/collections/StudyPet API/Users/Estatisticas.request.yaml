@@ -1,0 +1,19 @@
+$kind: http-request
+name: 'Estatísticas'
+method: GET
+url: '{{baseUrl}}/api/users/:userId/stats'
+order: 5000
+pathVariables:
+  - key: userId
+    value: '{{userId}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('status 200 com sequência, bestiário e gráfico de 7 dias', () => {
+        pm.response.to.have.status(200);
+        const body = pm.response.json();
+        pm.expect(body.streak).to.include.keys('current', 'longest');
+        pm.expect(body.bestiary).to.have.lengthOf(4);
+        pm.expect(body.lastDays.daily).to.have.lengthOf(7);
+      });

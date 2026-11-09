@@ -1,0 +1,28 @@
+$kind: http-request
+method: PUT
+url: '{{baseUrl}}/api/users/:userId/courses/:courseId'
+order: 5500
+pathVariables:
+  - key: userId
+    value: '{{userId}}'
+  - key: courseId
+    value: '{{courseId}}'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "title": "ASP.NET Core do zero",
+      "category": "CursoOnline",
+      "color": "verde",
+      "instructor": "Fulano",
+      "provider": "Udemy",
+      "sourceUrl": null
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("status 200", () => pm.response.to.have.status(200));

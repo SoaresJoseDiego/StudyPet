@@ -1,0 +1,24 @@
+$kind: http-request
+description: 'Envie isArchived false para desarquivar.'
+method: PUT
+url: '{{baseUrl}}/api/users/:userId/courses/:courseId/archived'
+order: 7000
+pathVariables:
+  - key: userId
+    value: '{{userId}}'
+  - key: courseId
+    value: '{{courseId}}'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "isArchived": false
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('status 200', () => pm.response.to.have.status(200));

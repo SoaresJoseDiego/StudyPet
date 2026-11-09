@@ -1,0 +1,27 @@
+$kind: http-request
+method: PUT
+url: '{{baseUrl}}/api/users/:userId/courses/:courseId/weekly-goal'
+order: 6500
+description: 'Minutos por semana (10 a 3000). Envie minutes null para remover a meta.'
+pathVariables:
+  - key: userId
+    value: '{{userId}}'
+  - key: courseId
+    value: '{{courseId}}'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "minutes": 180
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('status 200 e meta salva', () => {
+        pm.response.to.have.status(200);
+        pm.expect(pm.response.json().weeklyGoalMinutes).to.eql(180);
+      });

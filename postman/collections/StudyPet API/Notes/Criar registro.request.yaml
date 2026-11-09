@@ -1,0 +1,29 @@
+$kind: http-request
+method: POST
+url: '{{baseUrl}}/api/users/:userId/notes'
+order: 1000
+pathVariables:
+  - key: userId
+    value: '{{userId}}'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "courseId": {{courseId}},
+      "minutes": 25,
+      "mood": "Dificil",
+      "text": "Entendi controllers, travei em rotas com parâmetros.",
+      "studySessionId": {{sessionId}}
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("status 201 e conquista do primeiro registro", () => {
+        pm.response.to.have.status(201);
+        const names = pm.response.json().newAchievements.map(a => a.name);
+        pm.expect(names).to.include("Querido diário");
+      });

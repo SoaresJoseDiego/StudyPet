@@ -1,0 +1,17 @@
+$kind: http-request
+method: GET
+url: '{{baseUrl}}/api/users/:userId/achievements'
+order: 6000
+pathVariables:
+  - key: userId
+    value: '{{userId}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("status 200 com 18 conquistas em 6 grupos", () => {
+        pm.response.to.have.status(200);
+        const body = pm.response.json();
+        pm.expect(body.total).to.eql(18);
+        pm.expect(body.groups).to.have.lengthOf(6);
+      });

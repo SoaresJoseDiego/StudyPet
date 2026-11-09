@@ -1,0 +1,33 @@
+$kind: http-request
+name: 'Concluir sessão'
+description: 'focusSeconds: segundos de foco medidos pela tela. Os slimes saem da semente da sessão.'
+method: POST
+url: '{{baseUrl}}/api/users/:userId/study-sessions/:sessionId/finish'
+order: 4000
+pathVariables:
+  - key: userId
+    value: '{{userId}}'
+  - key: sessionId
+    value: '{{sessionId}}'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "focusSeconds": 1500,
+      "completeLesson": true
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("status 200 com slimes e recompensa coerentes", () => {
+        pm.response.to.have.status(200);
+        const body = pm.response.json();
+        const s = body.slimes;
+        pm.expect(body.session.status).to.eql("Completed");
+        pm.expect(s.total).to.be.within(12, 40);
+        pm.expect(body.reward.baseExperience).to.eql(s.lilas * 5 + s.azul * 10 + s.rosa * 15 + s.rei * 30);
+      });

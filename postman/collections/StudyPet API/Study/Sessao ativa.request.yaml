@@ -1,0 +1,15 @@
+$kind: http-request
+name: 'Sessão ativa'
+method: GET
+url: '{{baseUrl}}/api/users/:userId/study-sessions/active'
+order: 3000
+pathVariables:
+  - key: userId
+    value: '{{userId}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('status 200 ou 404 (nenhuma ativa)', () => {
+        pm.expect(pm.response.code).to.be.oneOf([200, 404]);
+      });

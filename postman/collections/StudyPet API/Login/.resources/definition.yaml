@@ -1,0 +1,4 @@
+$kind: collection
+name: Login
+description: Entrada provisória só por e-mail, sem senha. Será trocada por autenticação de verdade (senha/JWT).
+order: 2500

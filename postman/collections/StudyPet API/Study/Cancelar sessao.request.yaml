@@ -1,0 +1,18 @@
+$kind: http-request
+name: 'Cancelar sessão'
+description: 'Cancela a sessão em andamento. Se a sessão já foi concluída, a API responde 409.'
+method: POST
+url: '{{baseUrl}}/api/users/:userId/study-sessions/:sessionId/cancel'
+order: 6000
+pathVariables:
+  - key: userId
+    value: '{{userId}}'
+  - key: sessionId
+    value: '{{sessionId}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('status 200 ou 409 (sessão já encerrada)', () => {
+        pm.expect(pm.response.code).to.be.oneOf([200, 409]);
+      });

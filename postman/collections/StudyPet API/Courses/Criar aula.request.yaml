@@ -1,0 +1,32 @@
+$kind: http-request
+name: 'Criar aula'
+method: POST
+url: '{{baseUrl}}/api/users/:userId/courses/:courseId/modules/:moduleId/lessons'
+order: 3000
+pathVariables:
+  - key: userId
+    value: '{{userId}}'
+  - key: courseId
+    value: '{{courseId}}'
+  - key: moduleId
+    value: '{{moduleId}}'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "title": "Criando o primeiro endpoint"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('status 201 e aula NotStarted', () => {
+        pm.response.to.have.status(201);
+        pm.expect(pm.response.json().progress).to.eql('NotStarted');
+      });
+      if (pm.response.code === 201) {
+        pm.collectionVariables.set('lessonId', pm.response.json().id);
+      }

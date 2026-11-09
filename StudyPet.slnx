@@ -5,4 +5,7 @@
     <Project Path="src/StudyPet.Domain/StudyPet.Domain.csproj" />
     <Project Path="src/StudyPet.Infrastructure/StudyPet.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/StudyPet.Application.Tests/StudyPet.Application.Tests.csproj" />
+  </Folder>
 </Solution>

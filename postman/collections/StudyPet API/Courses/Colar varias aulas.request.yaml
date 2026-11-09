@@ -1,0 +1,29 @@
+$kind: http-request
+name: 'Colar várias aulas'
+method: POST
+url: '{{baseUrl}}/api/users/:userId/courses/:courseId/modules/:moduleId/lessons/bulk'
+order: 3500
+pathVariables:
+  - key: userId
+    value: '{{userId}}'
+  - key: courseId
+    value: '{{courseId}}'
+  - key: moduleId
+    value: '{{moduleId}}'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "titles": ["Middlewares", "Injeção de dependência"]
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("status 201 com as aulas criadas", () => {
+        pm.response.to.have.status(201);
+        pm.expect(pm.response.json()).to.have.lengthOf(2);
+      });

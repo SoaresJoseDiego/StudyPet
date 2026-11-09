@@ -1,0 +1,14 @@
+$kind: http-request
+method: GET
+url: '{{baseUrl}}/api/game/rules'
+order: 2000
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("curva do design: Broto (nível 10) com 1.685 Exp", () => {
+        pm.response.to.have.status(200);
+        const body = pm.response.json();
+        pm.expect(body.kingEvery).to.eql(60);
+        pm.expect(body.levels[9].totalToReach).to.eql(1685);
+      });

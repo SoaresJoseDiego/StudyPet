@@ -1,0 +1,8 @@
+cloudResources:
+  collections:
+    ../postman/collections/StudyPet API: 41255751-6a55400e-ae56-4843-ac70-7b0603321c74
+  environments:
+    ../postman/environments/Local.environment.yaml: 41255751-632660ca-aebd-4805-8bb7-6ca8bd6b2fa3
+workspace:
+  id: 7aae11e1-d5c0-4564-b7bd-0d8c214d07f4
+  name: StudyPet

@@ -24,26 +24,50 @@ namespace StudyPet.Infrastructure.Migrations
 
             modelBuilder.Entity("StudyPet.Domain.Course", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Color")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Instructor")
-                        .HasColumnType("text");
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
 
                     b.Property<bool>("IsArchived")
                         .HasColumnType("boolean");
 
                     b.Property<string>("Provider")
-                        .HasColumnType("text");
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<string>("SourceUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(180)
                         .HasColumnType("character varying(180)");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("WeeklyGoalMinutes")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -54,19 +78,22 @@ namespace StudyPet.Infrastructure.Migrations
 
             modelBuilder.Entity("StudyPet.Domain.CourseModule", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
 
-                    b.Property<Guid>("CourseId")
-                        .HasColumnType("uuid");
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CourseId")
+                        .HasColumnType("integer");
 
                     b.Property<int>("Position")
                         .HasColumnType("integer");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(180)
+                        .HasColumnType("character varying(180)");
 
                     b.HasKey("Id");
 
@@ -77,12 +104,14 @@ namespace StudyPet.Infrastructure.Migrations
 
             modelBuilder.Entity("StudyPet.Domain.Lesson", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
 
-                    b.Property<Guid>("CourseModuleId")
-                        .HasColumnType("uuid");
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CourseModuleId")
+                        .HasColumnType("integer");
 
                     b.Property<int>("Position")
                         .HasColumnType("integer");
@@ -92,7 +121,8 @@ namespace StudyPet.Infrastructure.Migrations
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(180)
+                        .HasColumnType("character varying(180)");
 
                     b.HasKey("Id");
 
@@ -103,9 +133,11 @@ namespace StudyPet.Infrastructure.Migrations
 
             modelBuilder.Entity("StudyPet.Domain.StudyCharacter", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<int>("Coins")
                         .HasColumnType("integer");
@@ -118,10 +150,11 @@ namespace StudyPet.Infrastructure.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -131,11 +164,55 @@ namespace StudyPet.Infrastructure.Migrations
                     b.ToTable("Characters");
                 });
 
+            modelBuilder.Entity("StudyPet.Domain.StudyNote", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CourseId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Minutes")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Mood")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<int?>("StudySessionId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseId");
+
+                    b.HasIndex("UserId", "CreatedAt");
+
+                    b.ToTable("StudyNotes");
+                });
+
             modelBuilder.Entity("StudyPet.Domain.StudySession", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<int>("BreakMinutes")
                         .HasColumnType("integer");
@@ -152,10 +229,31 @@ namespace StudyPet.Infrastructure.Migrations
                     b.Property<int>("FocusMinutes")
                         .HasColumnType("integer");
 
-                    b.Property<Guid>("LessonId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("FocusSeconds")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("LessonId")
+                        .HasColumnType("integer");
 
                     b.Property<int>("PlannedMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Seed")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SlimeStartIndex")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SlimesAzul")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SlimesLilas")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SlimesRei")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SlimesRosa")
                         .HasColumnType("integer");
 
                     b.Property<DateTimeOffset>("StartedAt")
@@ -164,24 +262,36 @@ namespace StudyPet.Infrastructure.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
                     b.HasIndex("LessonId");
+
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_StudySessions_UserId_InProgress")
+                        .HasFilter("\"Status\" = 0");
+
+                    b.HasIndex("UserId", "FinishedAt");
 
                     b.ToTable("StudySessions");
                 });
 
             modelBuilder.Entity("StudyPet.Domain.User", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DailyGoalMinutes")
+                        .HasColumnType("integer");
 
                     b.Property<string>("DisplayName")
                         .IsRequired()
@@ -193,12 +303,42 @@ namespace StudyPet.Infrastructure.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
+                    b.Property<int>("SlimesDefeated")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
                         .IsUnique();
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("StudyPet.Domain.UserAchievement", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("EarnedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "Key")
+                        .IsUnique();
+
+                    b.ToTable("UserAchievements");
                 });
 
             modelBuilder.Entity("StudyPet.Domain.Course", b =>
@@ -245,6 +385,25 @@ namespace StudyPet.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("StudyPet.Domain.StudyNote", b =>
+                {
+                    b.HasOne("StudyPet.Domain.Course", "Course")
+                        .WithMany("Notes")
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("StudyPet.Domain.User", "User")
+                        .WithMany("Notes")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Course");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("StudyPet.Domain.StudySession", b =>
                 {
                     b.HasOne("StudyPet.Domain.Lesson", "Lesson")
@@ -253,12 +412,33 @@ namespace StudyPet.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("StudyPet.Domain.User", "User")
+                        .WithMany("Sessions")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.Navigation("Lesson");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("StudyPet.Domain.UserAchievement", b =>
+                {
+                    b.HasOne("StudyPet.Domain.User", "User")
+                        .WithMany("Achievements")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("StudyPet.Domain.Course", b =>
                 {
                     b.Navigation("Modules");
+
+                    b.Navigation("Notes");
                 });
 
             modelBuilder.Entity("StudyPet.Domain.CourseModule", b =>
@@ -273,9 +453,15 @@ namespace StudyPet.Infrastructure.Migrations
 
             modelBuilder.Entity("StudyPet.Domain.User", b =>
                 {
+                    b.Navigation("Achievements");
+
                     b.Navigation("Character");
 
                     b.Navigation("Courses");
+
+                    b.Navigation("Notes");
+
+                    b.Navigation("Sessions");
                 });
 #pragma warning restore 612, 618
         }

@@ -1,0 +1,18 @@
+$kind: http-request
+method: GET
+url: '{{baseUrl}}/api/users/:userId/notes?courseId={{courseId}}'
+order: 2000
+pathVariables:
+  - key: userId
+    value: '{{userId}}'
+queryParams:
+  - key: courseId
+    value: '{{courseId}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("status 200 com total e itens", () => {
+        pm.response.to.have.status(200);
+        pm.expect(pm.response.json().items.length).to.be.above(0);
+      });

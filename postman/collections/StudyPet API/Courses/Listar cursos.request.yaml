@@ -1,0 +1,21 @@
+$kind: http-request
+description: 'status: andamento, concluidos, arquivados ou todos.'
+method: GET
+url: '{{baseUrl}}/api/users/:userId/courses?status=andamento'
+order: 4000
+pathVariables:
+  - key: userId
+    value: '{{userId}}'
+queryParams:
+  - key: status
+    value: 'andamento'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("status 200 com contagens e itens", () => {
+        pm.response.to.have.status(200);
+        const body = pm.response.json();
+        pm.expect(body.counts).to.include.keys("inProgress", "completed", "archived", "all");
+        pm.expect(body.items).to.be.an("array");
+      });

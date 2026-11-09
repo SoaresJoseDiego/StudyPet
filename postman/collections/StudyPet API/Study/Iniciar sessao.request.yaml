@@ -1,0 +1,31 @@
+$kind: http-request
+name: 'Iniciar sessão'
+method: POST
+url: '{{baseUrl}}/api/users/:userId/study-sessions'
+order: 2000
+pathVariables:
+  - key: userId
+    value: '{{userId}}'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "lessonId": {{lessonId}},
+      "plannedMinutes": 25
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("status 201 com a semente das waves", () => {
+        pm.response.to.have.status(201);
+        const body = pm.response.json();
+        pm.expect(body.status).to.eql("InProgress");
+        pm.expect(body.seed).to.be.a("number");
+      });
+      if (pm.response.code === 201) {
+        pm.collectionVariables.set("sessionId", pm.response.json().id);
+      }

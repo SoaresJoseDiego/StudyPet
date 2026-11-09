@@ -1,0 +1,24 @@
+$kind: http-request
+method: GET
+url: '{{baseUrl}}/api/users/:userId/courses/:courseId'
+order: 1500
+pathVariables:
+  - key: userId
+    value: '{{userId}}'
+  - key: courseId
+    value: '{{courseId}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("status 200 com estatísticas, módulos e próxima aula", () => {
+        pm.response.to.have.status(200);
+        const body = pm.response.json();
+        pm.expect(body.stats).to.include.keys("totalLessons", "sessions", "focusMinutes", "experience");
+        pm.expect(body.modules).to.be.an("array");
+      });
+      const body = pm.response.json();
+      if (body.modules && body.modules.length) {
+        pm.collectionVariables.set("moduleId", body.modules[0].id);
+        pm.collectionVariables.set("lessonId", body.modules[0].lessons[0].id);
+      }

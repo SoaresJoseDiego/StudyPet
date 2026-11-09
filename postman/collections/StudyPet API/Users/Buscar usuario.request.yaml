@@ -1,0 +1,16 @@
+$kind: http-request
+name: 'Buscar usuário'
+method: GET
+url: '{{baseUrl}}/api/users/:userId'
+order: 2000
+pathVariables:
+  - key: userId
+    value: '{{userId}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('status 200 com personagem', () => {
+        pm.response.to.have.status(200);
+        pm.expect(pm.response.json().character).to.be.an('object');
+      });
