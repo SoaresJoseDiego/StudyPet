@@ -15,9 +15,11 @@ Um companheiro de estudo: sessões de foco, pausas saudáveis, evolução de per
 ## Primeiros passos
 
 1. Suba o banco com `docker compose up -d`.
-2. Execute a API com `dotnet run --project src/StudyPet.Api`.
-3. Em outro terminal, suba o front: `cd web`, `npm install` (só na primeira vez) e `npm run dev`.
-4. Abra http://localhost:5173. O front encaminha `/api` para a API em http://localhost:5278.
+2. Defina a chave dos tokens de login, com pelo menos 32 caracteres (só na primeira vez): `dotnet user-secrets set Jwt:Key <chave> --project src/StudyPet.Api`.
+3. Aplique as migrations com `dotnet tool restore` e `dotnet ef database update --project src/StudyPet.Infrastructure --startup-project src/StudyPet.Api`.
+4. Execute a API com `dotnet run --project src/StudyPet.Api`.
+5. Em outro terminal, suba o front: `cd web`, `npm install` (só na primeira vez) e `npm run dev`.
+6. Abra http://localhost:5173. O front encaminha `/api` para a API em http://localhost:5278.
 
 O PostgreSQL pode ser conectado pelo DBeaver em `localhost:5432`, banco `studypet`, usuário `studypet` e senha `studypet`.
 

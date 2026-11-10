@@ -29,6 +29,11 @@ export interface User {
   character: Character | null
 }
 
+/** Resposta de criar conta e de entrar: o usuário mais o token de login. */
+export interface AuthUser extends User {
+  token: string
+}
+
 export interface AchievementSummary {
   key: string
   name: string

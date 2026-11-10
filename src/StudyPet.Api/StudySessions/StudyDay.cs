@@ -1,16 +1,23 @@
 namespace StudyPet.Api.StudySessions;
 
 /// <summary>
-/// Datas do calendário de estudo. Por enquanto o "dia" é o dia em UTC;
+/// Datas do calendário de estudo. Por enquanto o "dia" segue o horário de Brasília;
 /// quando o usuário tiver fuso horário, calcular a partir dele.
 /// </summary>
 public static class StudyDay
 {
-    public static DateOnly Today() => DateOnly.FromDateTime(DateTime.UtcNow);
+    private static readonly TimeZoneInfo Zone = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
 
-    public static DateOnly DayOf(DateTimeOffset moment) => DateOnly.FromDateTime(moment.UtcDateTime);
+    public static DateOnly Today() => DayOf(DateTimeOffset.UtcNow);
 
-    public static DateTimeOffset StartOf(DateOnly day) => new(day.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero);
+    public static DateOnly DayOf(DateTimeOffset moment) => DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(moment, Zone).DateTime);
+
+    /// <summary>Meia-noite do dia, em UTC (o Npgsql só aceita offset zero em timestamptz).</summary>
+    public static DateTimeOffset StartOf(DateOnly day)
+    {
+        var midnight = day.ToDateTime(TimeOnly.MinValue);
+        return new DateTimeOffset(midnight, Zone.GetUtcOffset(midnight)).ToUniversalTime();
+    }
 
     public static DateTimeOffset StartOfToday() => StartOf(Today());
 

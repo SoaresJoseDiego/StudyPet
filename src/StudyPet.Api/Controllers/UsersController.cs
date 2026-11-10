@@ -1,5 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using StudyPet.Api.Auth;
 using StudyPet.Api.Users;
 using StudyPet.Application;
 using StudyPet.Infrastructure;
@@ -9,8 +12,19 @@ namespace StudyPet.Api.Controllers;
 
 [ApiController]
 [Route("api/users")]
-public sealed class UsersController(StudyPetDbContext dbContext) : ControllerBase
+public sealed class UsersController(
+    StudyPetDbContext dbContext,
+    IPasswordHasher<UserEntity> passwordHasher,
+    JwtTokens tokens) : ControllerBase
 {
+    private const int MinPasswordLength = 8;
+    private const int MaxPasswordLength = 128;
+
+    // Verificado quando o e-mail não existe, para a resposta levar o mesmo tempo de uma senha errada.
+    private static readonly string UnknownUserHash =
+        new PasswordHasher<UserEntity>().HashPassword(new UserEntity(), Guid.NewGuid().ToString());
+
+    [AllowAnonymous]
     [HttpPost]
     public async Task<IActionResult> Create(
         CreateUserRequest request,
@@ -39,6 +53,14 @@ public sealed class UsersController(StudyPetDbContext dbContext) : ControllerBas
             });
         }
 
+        if (PasswordProblem(request.Password) is { } passwordProblem)
+        {
+            return BadRequest(new
+            {
+                message = passwordProblem
+            });
+        }
+
         var emailAlreadyUsed = await dbContext.Users
             .AnyAsync(user => user.Email == email, cancellationToken);
 
@@ -59,51 +81,72 @@ public sealed class UsersController(StudyPetDbContext dbContext) : ControllerBas
                 Name = characterName
             }
         };
+        user.PasswordHash = passwordHasher.HashPassword(user, request.Password);
 
         dbContext.Users.Add(user);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        return Created($"/api/users/{user.Id}", ToResponse(user));
+        return Created($"/api/users/{user.Id}", ToAuthResponse(user));
     }
 
     /// <summary>
-    /// Entrada PROVISÓRIA só por e-mail, sem senha, para o front reabrir a conta.
-    /// Substituir por autenticação de verdade (senha/JWT) antes de qualquer deploy.
-    /// Fora do ambiente Development o endpoint nem existe (404).
+    /// Entra com e-mail e senha e devolve o token. E-mail desconhecido e senha errada têm a mesma resposta.
+    /// Contas antigas, sem senha, só existem em desenvolvimento: lá, a primeira senha usada passa a valer.
     /// </summary>
+    [AllowAnonymous]
     [HttpPost("sign-in")]
     public async Task<IActionResult> SignIn(
         SignInRequest request,
         [FromServices] IWebHostEnvironment environment,
         CancellationToken cancellationToken)
     {
-        if (!environment.IsDevelopment())
-            return NotFound();
+        var email = request.Email.Trim().ToLowerInvariant();
 
-        var email = request.Email?.Trim().ToLowerInvariant();
-
-        if (string.IsNullOrWhiteSpace(email))
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrEmpty(request.Password))
         {
             return BadRequest(new
             {
-                message = "O e-mail é obrigatório."
+                message = "Informe o e-mail e a senha."
             });
         }
 
         var user = await dbContext.Users
-            .AsNoTracking()
             .Include(user => user.Character)
             .FirstOrDefaultAsync(user => user.Email == email, cancellationToken);
 
         if (user is null)
         {
-            return NotFound(new
-            {
-                message = "Nenhuma conta encontrada com este e-mail."
-            });
+            passwordHasher.VerifyHashedPassword(new UserEntity(), UnknownUserHash, request.Password);
+            return InvalidCredentials();
         }
 
-        return Ok(ToResponse(user));
+        if (user.PasswordHash is null)
+        {
+            if (!environment.IsDevelopment()) return InvalidCredentials();
+
+            if (PasswordProblem(request.Password) is { } passwordProblem)
+            {
+                return BadRequest(new
+                {
+                    message = passwordProblem
+                });
+            }
+
+            user.PasswordHash = passwordHasher.HashPassword(user, request.Password);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return Ok(ToAuthResponse(user));
+        }
+
+        var verification = passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
+        if (verification == PasswordVerificationResult.Failed) return InvalidCredentials();
+
+        if (verification == PasswordVerificationResult.SuccessRehashNeeded)
+        {
+            user.PasswordHash = passwordHasher.HashPassword(user, request.Password);
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        return Ok(ToAuthResponse(user));
     }
 
     [HttpGet("{userId:int}")]
@@ -159,6 +202,26 @@ public sealed class UsersController(StudyPetDbContext dbContext) : ControllerBas
             user.DailyGoalMinutes
         });
     }
+
+    private static string? PasswordProblem(string password) =>
+        password.Length is < MinPasswordLength or > MaxPasswordLength
+            ? $"A senha deve ter entre {MinPasswordLength} e {MaxPasswordLength} caracteres."
+            : null;
+
+    private UnauthorizedObjectResult InvalidCredentials() => Unauthorized(new
+    {
+        message = "E-mail ou senha incorretos."
+    });
+
+    private object ToAuthResponse(UserEntity user) => new
+    {
+        user.Id,
+        user.DisplayName,
+        user.Email,
+        user.DailyGoalMinutes,
+        Character = user.Character is null ? null : CharacterResponse.From(user.Character),
+        Token = tokens.Create(user)
+    };
 
     private static object ToResponse(UserEntity user) => new
     {

@@ -3,20 +3,20 @@ import { SLIMES, WAVE_MS, type SlimeKind, type SlimeSpawn } from '../slimes'
 import { Pet } from './Pet'
 import { Slime } from './Slime'
 
-// Cena "Web · Batalha" do design. Os slimes chegam em waves (ver slimes.ts): cada um nasce na
-// cerca, caminha até o pet e é derrotado no seu `deathMs`. A caminhada é uma animação CSS
-// contínua (suave, 60 fps), sincronizada com o tempo de foco quando o slime aparece e congelada
-// na pausa; o estado de cada slime (andando, morrendo) vem de `focusMs`.
+// Cena "Web · Batalha" do design. Os slimes chegam em waves de 4 (ver slimes.ts): todos nascem
+// juntos na cerca quando a wave começa e cada um caminha no seu ritmo para chegar ao pet no seu
+// `deathMs`, um por minuto. A wave seguinte entra quando o último cai, então a cena nunca esvazia.
+// A caminhada é uma animação CSS contínua (suave, 60 fps), sincronizada com o tempo de foco quando
+// o slime aparece e congelada na pausa; o estado de cada slime (andando, morrendo) vem de `focusMs`.
 
 const PET_ZONE = 236 // px reservados ao pet à esquerda
-const WALK_MS = 30_000 // tempo para atravessar a cena
 const DIE_MS = 400
 const BURST_MS = 320
 const POP_MS = 1_200
 const LUNGE_BEFORE_MS = 300
 const LUNGE_AFTER_MS = 120
 const WAVE_BANNER_MS = 2_500
-const LANES = [0, 22, 10]
+const LANES = [0, 22, 10, 30]
 
 interface BattleSceneProps {
   focusMs: number
@@ -33,7 +33,7 @@ interface BattleSceneProps {
 
 export function BattleScene({ focusMs, paused, active, stage, spawns = [], badge, banner, evolving, children }: BattleSceneProps) {
   const visible = active
-    ? spawns.filter((spawn) => spawn.deathMs - WALK_MS <= focusMs && focusMs < spawn.deathMs + DIE_MS)
+    ? spawns.filter((spawn) => spawn.wave * WAVE_MS <= focusMs && focusMs < spawn.deathMs + DIE_MS)
     : []
   const recentDeaths = active ? spawns.filter((spawn) => spawn.deathMs <= focusMs && focusMs < spawn.deathMs + POP_MS) : []
   const lunging =
@@ -106,14 +106,15 @@ function laneStyle(spawn: SlimeSpawn): CSSProperties {
 
 /** Caminha da cerca até o pet com animação CSS. O atraso negativo é fixado ao montar. */
 function WalkingSlime({ spawn, focusMs, paused }: { spawn: SlimeSpawn; focusMs: number; paused: boolean }) {
-  // Quanto o slime já andou quando apareceu na tela (os primeiros nascem no meio do caminho).
-  const [walkedAtMount] = useState(() => focusMs - (spawn.deathMs - WALK_MS))
+  const spawnMs = spawn.wave * WAVE_MS
+  // Quanto o slime já andou quando apareceu na tela (ao retomar uma sessão, ele volta no meio do caminho).
+  const [walkedAtMount] = useState(() => focusMs - spawnMs)
   return (
     <div
       className="scene-slime scene-slime-walk"
       style={{
         ...laneStyle(spawn),
-        animationDuration: `${WALK_MS}ms`,
+        animationDuration: `${spawn.deathMs - spawnMs}ms`,
         animationDelay: `${-walkedAtMount}ms`,
         animationPlayState: paused ? 'paused' : 'running',
       }}

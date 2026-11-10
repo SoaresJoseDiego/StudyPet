@@ -1,10 +1,10 @@
 import { createContext, useContext } from 'react'
-import type { User } from './api/types'
+import type { AuthUser, User } from './api/types'
 
 export interface SessionValue {
   user: User | null
   loading: boolean
-  signIn: (user: User) => void
+  signIn: (auth: AuthUser) => void
   signOut: () => void
   refreshUser: () => Promise<void>
 }

@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
-import { ApiError, api } from './api/client'
-import type { User } from './api/types'
+import { ApiError, api, hasAuthToken, setAuthToken } from './api/client'
+import type { AuthUser, User } from './api/types'
 import { SessionContext } from './session-context'
 
 const STORAGE_KEY = 'studypet.userId'
 
-/** Id numérico salvo no navegador. Ids antigos (Guid, antes da troca para int) são descartados. */
+/** Id numérico salvo no navegador. Sem token não há sessão; ids antigos (Guid) são descartados. */
 function readStoredUserId(): number | null {
+  if (!hasAuthToken()) return null
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw && /^\d+$/.test(raw)) return Number(raw)
@@ -30,12 +31,14 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(() => readStoredUserId() !== null)
 
-  const signIn = useCallback((next: User) => {
+  const signIn = useCallback(({ token, ...next }: AuthUser) => {
+    setAuthToken(token)
     storeUserId(next.id)
     setUser(next)
   }, [])
 
   const signOut = useCallback(() => {
+    setAuthToken(null)
     storeUserId(null)
     setUser(null)
   }, [])

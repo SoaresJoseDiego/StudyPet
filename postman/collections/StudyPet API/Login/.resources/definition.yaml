@@ -1,4 +1,4 @@
 $kind: collection
 name: Login
-description: Entrada provisória só por e-mail, sem senha. Será trocada por autenticação de verdade (senha/JWT).
+description: Entrada com e-mail e senha, que devolve o token JWT usado nas demais requisições.
 order: 2500

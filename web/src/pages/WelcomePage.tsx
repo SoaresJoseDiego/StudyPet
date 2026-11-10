@@ -9,6 +9,7 @@ export function WelcomePage() {
   const [mode, setMode] = useState<'create' | 'signin'>('create')
   const [displayName, setDisplayName] = useState('')
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [characterName, setCharacterName] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -18,11 +19,11 @@ export function WelcomePage() {
     setBusy(true)
     setError(null)
     try {
-      const user =
+      const auth =
         mode === 'create'
-          ? await api.createUser(displayName, email, characterName)
-          : await api.signIn(email)
-      signIn(user)
+          ? await api.createUser(displayName, email, password, characterName)
+          : await api.signIn(email, password)
+      signIn(auth)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro inesperado.')
     } finally {
@@ -87,6 +88,19 @@ export function WelcomePage() {
           />
         </label>
 
+        <label className="field">
+          <span>Senha</span>
+          <input
+            required
+            type="password"
+            minLength={mode === 'create' ? 8 : undefined}
+            maxLength={128}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete={mode === 'create' ? 'new-password' : 'current-password'}
+          />
+        </label>
+
         {mode === 'create' && (
           <label className="field">
             <span>Nome do seu companheiro</span>
@@ -104,10 +118,6 @@ export function WelcomePage() {
         <button type="submit" className="btn btn-primary" disabled={busy}>
           {busy ? 'Aguarde…' : mode === 'create' ? 'Começar' : 'Entrar'}
         </button>
-
-        {mode === 'signin' && (
-          <p className="muted small">Entrada provisória só com e-mail, enquanto o login com senha não existe.</p>
-        )}
       </form>
     </div>
   )

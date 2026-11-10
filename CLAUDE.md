@@ -46,12 +46,12 @@ Only `StudyPet.Application` has unit tests. There are no API integration tests y
 
 The solution is .NET 10 with layered projects (`StudyPet.slnx`):
 
-- **Domain**: all entities and enums in one file, `Entities.cs`, as plain mutable classes. IDs are client-generated `Guid.NewGuid()` defaults, not database-generated.
+- **Domain**: all entities and enums in one file, `Entities.cs`, as plain mutable classes. IDs are database-generated `int`s.
 - **Application**: pure domain logic with no I/O. It contains three classes:
-  - `Slimes`: each focus minute = one slime (fixed 8-minute pattern, plus a Slime Rei every 25th minute). `Slimes.Tally(focusMinutes)` gives counts and Exp. Slimes are never stored: they are recomputed from `FocusMinutes`, so changing the pattern rewrites history.
+  - `Slimes`: waves of 4 slimes every 4 focus minutes, one defeated at the end of each minute; the next wave enters when the last one dies, so the scene is never empty. Kinds are drawn from the session's `Seed` (mulberry32, mirrored in `web/src/slimes.ts`), and every 60th slime of the user is a Slime Rei. `Slimes.Tally(seed, startIndex, focusSeconds)` gives the counts, which finish stores on the `StudySession`, so changing the rules does not rewrite history.
   - `StudyRewardCalculator`: base Exp = slime Exp, plus the first-session and daily-goal bonuses, coins, and break rules from `docs/mvp.md`.
   - `StudyStreak`: current and longest run of consecutive study days. The current streak stays alive until today ends.
-  - `CharacterProgression`: going from level N to N+1 costs N×100 XP. It also defines the pet's 4 forms (`Stages`: Semente 1, Broto 10, Muda 25, Florescido 50). `CharacterResponse` exposes `stage`/`stageName`/`nextStage*`, and finish returns `evolved`.
+  - `CharacterProgression`: going from level N to N+1 costs 20×N^1.35 XP, rounded to multiples of 5. It also defines the pet's 4 forms (`Stages`: Semente 1, Broto 10, Muda 25, Florescido 50). `CharacterResponse` exposes `stage`/`stageName`/`nextStage*`, and finish returns `evolved`.
   - `DailyGoal`: the +20% bonus applies only to the session that makes the day's total cross the goal, once per day.
 - `StatsController` (`GET /api/users/{id}/stats`) aggregates everything the Início, Meu pet, Histórico and Bestiário screens show: today, week (Monday-based) by course with `Course.WeeklyGoalMinutes`, the last 7 days, streak, totals, bestiary counts and the last encounter.
 - **Infrastructure**: `StudyPetDbContext` (Npgsql) plus migrations. Relationships, unique indexes (such as `User.Email`), and max lengths are set with the Fluent API in `OnModelCreating`, not with attributes.
@@ -63,15 +63,16 @@ The core loop lives in `StudySessionsController`:
 - **Start** sets the lesson to `InProgress`.
 - **Finish** computes the reward from the day's completed sessions, updates the character's XP, coins, and level, and can set the lesson to `Completed`.
 - A partial unique index (`IX_StudySessions_UserId_InProgress`) enforces at most one `InProgress` session per user.
-- "Today" is the UTC day (`StudyDay.StartOfToday`), since users have no time zone yet.
+- "Today" is the day in Brasília time (`StudyDay`, `America/Sao_Paulo`), since users have no time zone yet.
 
 ### API conventions
 
 - The API uses two styles:
-  - Controllers in `Api/Controllers/` for resource endpoints. They have primary-constructor injection of `StudyPetDbContext`, nested routes such as `api/users/{userId:guid}/courses`, and request records grouped by feature folder (`Api/Users/`, `Api/Courses/`).
+  - Controllers in `Api/Controllers/` for resource endpoints. They have primary-constructor injection of `StudyPetDbContext`, nested routes such as `api/users/{userId:int}/courses`, and request records grouped by feature folder (`Api/Users/`, `Api/Courses/`).
   - Minimal-API `MapGet` endpoints in `Program.cs` for utility endpoints (`/api/system/status`, `/api/study/reward-preview`).
 - Controllers use `DbContext` directly; there is no repository or service layer. They trim and normalize input (emails are lowercased), validate by hand, and return `BadRequest`, `NotFound`, or `Conflict` with an anonymous `{ message }` body. On success they return `Created(location, anonymousProjection)` and never expose entities directly.
-- Ownership is checked in the query itself, for example `lesson.Module!.Course!.UserId == userId`. A resource that belongs to another user returns 404, not 403. There is no authentication yet: `userId` comes from the route.
+- Ownership is checked in the query itself, for example `lesson.Module!.Course!.UserId == userId`. A resource that belongs to another user returns 404, not 403.
+- Authentication is e-mail + password with a JWT (7 days, `sub` = user id, `Api/Auth/JwtTokens.cs`). Everything requires a token except what is marked `[AllowAnonymous]`/`.AllowAnonymous()`, and a middleware in `Program.cs` returns 404 when the route's `{userId}` is not the token's user. The signing key is `Jwt:Key` (at least 32 bytes), kept in user-secrets or an environment variable, never in the repo: `dotnet user-secrets set Jwt:Key <key> --project src/StudyPet.Api`. Accounts created before passwords have a null `PasswordHash`: in Development the first password used on sign-in becomes theirs, elsewhere they cannot sign in.
 - Enums are serialized as strings (`JsonStringEnumConverter`). Automatic model-binding errors are reshaped in `Program.cs` into `{ message, errors }`, so all 400 responses share one format.
 - Each request record goes in its own file in a feature folder: `Api/Users/`, `Api/Courses/`, `Api/StudySessions/`.
 - `StudyPet.Api.http` is still the template stub (it points at `/weatherforecast`) and does not reflect the real endpoints.
@@ -80,13 +81,13 @@ The core loop lives in `StudySessionsController`:
 
 - The front talks to the API only through `src/api/client.ts`, which uses relative `/api` URLs, and `src/api/types.ts`, which mirrors the API's camelCase JSON. When an endpoint changes, update both files.
 - The Vite proxy means there is no CORS configuration in the API. A deployed front would need CORS or a reverse proxy.
-- There is no real authentication. The signed-in `userId` is kept in `localStorage` (`session.tsx` + `session-context.ts`). `POST /api/users/sign-in` (e-mail only) is an explicitly temporary stand-in for login.
+- The token (`studypet.token`, handled in `client.ts`) and the signed-in `userId` (`session.tsx` + `session-context.ts`) are kept in `localStorage`. A 401 while holding a token clears it and returns to the welcome screen.
 - `StudyPage` holds the session state machine (pick course/lesson → running → reward overlay → break overlay).
   - The timer is client-side, computed from the session's server `startedAt`.
-  - Pauses are tracked only in the browser (`localStorage` key `studypet.pause.<sessionId>`). On finish, `floor(focus minutes)` is sent (minimum 1), so a slime only counts once its minute is complete.
+  - Pauses are tracked only in the browser (`localStorage` key `studypet.pause.<sessionId>`). On finish, `floor(focus seconds)` is sent, and a slime only counts once its `deathMs` has passed.
 - The whole UI follows the user's claude.ai design canvas "Pet de Estudos" (https://claude.ai/artifact/1FqoBbMeaiTJ5qV1zJ67xg). Its "Versão web" artboards map to pages: Web-Inicio → `DashboardPage`, Web-Batalha → `StudyPage` (`/estudar`), Web-Pet → `PetPage`, Web-Historico → `HistoryPage`, Web-Bestiario → `BestiaryPage`, and Sidebar → `Layout`. Cursos and Ajustes are app-only screens. When the design changes, re-read the canvas files and port them instead of redrawing.
   - `Pet.tsx` and `Slime.tsx` are the canvas SVGs, converted to JSX.
-  - `BattleScene.tsx` is derived purely from `focusMs` (no state). Slime N spawns at minute N, walks to the pet and dies exactly at the end of that minute, which is when it starts counting Exp.
+  - `BattleScene.tsx` is derived from `focusMs`. A wave's 4 slimes spawn together at the fence, each walks at its own pace and dies exactly at its `deathMs`, which is when it starts counting Exp.
   - `slimes.ts` and `progression.ts` mirror the backend rules, so the Exp, form and evolution banner can be previewed live during a session. The API's finish response is authoritative.
   - The palette (mint/teal) and fonts (Baloo 2 headings, Nunito body) are CSS variables in `index.css`, with dark mode via `prefers-color-scheme`.
 - Keep component files exporting only components (oxlint `only-export-components`). Helpers go in `format.ts`, and hooks/context go in `session-context.ts`.

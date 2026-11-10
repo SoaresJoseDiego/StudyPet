@@ -258,7 +258,7 @@ function IdleSession({
               <>
                 <p className="scene-card-title">Pronto para estudar?</p>
                 <p className="muted">
-                  A cada 2 minutos chega uma wave de 1 a 3 slimes. A cada 60 slimes derrotados aparece um Slime Rei.
+                  Os slimes chegam em waves de 4, sem parar, e seu pet derrota um por minuto. A cada 60 slimes derrotados aparece um Slime Rei.
                 </p>
               </>
             )}

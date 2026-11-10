@@ -1,7 +1,15 @@
 $kind: collection
 name: StudyPet API
-description: Endpoints da API StudyPet. Rode a collection inteira em ordem ou comece por "Criar usuário"; cada criação salva o id usado pelas requisições seguintes.
+description: Endpoints da API StudyPet. Rode a collection inteira em ordem ou comece por "Criar usuário"; cada criação salva o id usado pelas requisições seguintes, e o token de login vale para todas.
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{authToken}}'
 variables:
+  - key: authToken
+    value: ''
+    description: Preenchido por "Criar usuário" e "Entrar".
   - key: userId
     value: ''
     description: Preenchido por "Criar usuário".

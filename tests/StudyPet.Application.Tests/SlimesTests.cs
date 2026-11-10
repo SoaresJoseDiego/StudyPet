@@ -15,13 +15,13 @@ public class SlimesTests
     }
 
     [Fact]
-    public void Waves_have_one_to_three_slimes_and_all_die_inside_their_wave()
+    public void Waves_always_have_four_slimes_and_the_next_starts_when_the_last_dies()
     {
         var spawns = Slimes.Generate(seed: 7, startIndex: 0, untilMs: 120 * 60_000);
 
         foreach (var wave in spawns.GroupBy(spawn => spawn.Wave))
         {
-            Assert.InRange(wave.Count(), 1, 3);
+            Assert.Equal(4, wave.Count());
             Assert.All(wave, spawn =>
                 Assert.InRange(spawn.DeathMs, wave.Key * Slimes.WaveMs + 1, (wave.Key + 1) * Slimes.WaveMs));
             Assert.Equal((wave.Key + 1) * Slimes.WaveMs, wave.Max(spawn => spawn.DeathMs));
@@ -52,10 +52,12 @@ public class SlimesTests
     }
 
     [Fact]
-    public void Average_is_about_one_slime_per_minute()
+    public void One_slime_dies_at_the_end_of_each_minute()
     {
-        var spawns = Slimes.Generate(seed: 5, startIndex: 0, untilMs: 10_000 * 60_000);
-        Assert.InRange(spawns.Count / 10_000.0, 0.95, 1.05);
+        var spawns = Slimes.Generate(seed: 5, startIndex: 0, untilMs: 60 * 60_000);
+
+        Assert.Equal(Enumerable.Range(1, 60).Select(minute => minute * 60_000), spawns.Select(spawn => spawn.DeathMs));
+        Assert.Equal(25, Slimes.Tally(seed: 5, startIndex: 0, focusSeconds: 25 * 60).Total);
     }
 
     [Fact]
@@ -84,7 +86,7 @@ public class SlimesTests
         Assert.Equal(0.30675226449966431, random.Next(), 15);
         Assert.Equal(0.48420542152598500, random.Next(), 15);
 
-        Assert.Equal(new SlimeTally(15, 5, 6, 0), Slimes.Tally(seed: 1016695473, startIndex: 0, focusSeconds: 1500));
+        Assert.Equal(new SlimeTally(15, 8, 2, 0), Slimes.Tally(seed: 1016695473, startIndex: 0, focusSeconds: 1500));
     }
 
     [Fact]

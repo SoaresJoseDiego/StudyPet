@@ -303,6 +303,10 @@ namespace StudyPet.Infrastructure.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
+                    b.Property<string>("PasswordHash")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
                     b.Property<int>("SlimesDefeated")
                         .HasColumnType("integer");
 

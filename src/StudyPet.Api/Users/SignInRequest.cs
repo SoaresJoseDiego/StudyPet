@@ -1,3 +1,3 @@
 namespace StudyPet.Api.Users;
 
-public sealed record SignInRequest(string Email);
+public sealed record SignInRequest(string Email, string Password);

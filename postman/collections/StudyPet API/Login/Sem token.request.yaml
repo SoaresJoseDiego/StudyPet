@@ -1,0 +1,17 @@
+$kind: http-request
+method: GET
+url: '{{baseUrl}}/api/users/:userId'
+order: 1600
+auth:
+  type: noauth
+pathVariables:
+  - key: userId
+    value: '{{userId}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('status 401 com mensagem', () => {
+        pm.response.to.have.status(401);
+        pm.expect(pm.response.json().message).to.be.a('string');
+      });

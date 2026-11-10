@@ -3,6 +3,8 @@ name: Criar usuário
 method: POST
 url: '{{baseUrl}}/api/users'
 order: 1000
+auth:
+  type: noauth
 headers:
   - key: Content-Type
     value: application/json
@@ -12,14 +14,20 @@ body:
     {
       "displayName": "Usuário Teste",
       "email": "teste+{{$timestamp}}@studypet.local",
+      "password": "senha-de-teste-123",
       "characterName": "Pip"
     }
 scripts:
   - type: afterResponse
     language: text/javascript
     code: |-
-      pm.test('status 201', () => pm.response.to.have.status(201));
+      pm.test('status 201 com token', () => {
+        pm.response.to.have.status(201);
+        pm.expect(pm.response.json().token).to.be.a('string');
+        pm.expect(pm.response.json()).to.not.have.property('passwordHash');
+      });
       if (pm.response.code === 201) {
         pm.collectionVariables.set('userId', pm.response.json().id);
         pm.collectionVariables.set('userEmail', pm.response.json().email);
+        pm.collectionVariables.set('authToken', pm.response.json().token);
       }

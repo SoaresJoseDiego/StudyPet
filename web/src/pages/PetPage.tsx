@@ -62,8 +62,8 @@ export function PetPage() {
           <div className="stack-sm">
             <h3 className="card-title-sm">Como ele ganha Exp</h3>
             <p className="muted">
-              Os slimes chegam em waves: a cada 2 minutos de estudo vêm de 1 a 3, valendo de 5 a 15 Exp. A cada 60 slimes
-              derrotados aparece um Slime Rei, valendo 30. Os níveis ficam cada vez mais caros.
+              Os slimes chegam em waves de 4, sem parar, e cada minuto de estudo derrota um, valendo de 5 a 15 Exp. A cada 60
+              slimes derrotados aparece um Slime Rei, valendo 30. Os níveis ficam cada vez mais caros.
             </p>
             <Link to="/exp" className="strong">
               Ver o sistema de Exp completo

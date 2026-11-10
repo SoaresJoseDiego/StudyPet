@@ -1,6 +1,7 @@
 import type {
   AchievementSummary,
   AchievementsResponse,
+  AuthUser,
   CourseDetail,
   CourseList,
   CourseModule,
@@ -31,16 +32,52 @@ export class ApiError extends Error {
   }
 }
 
+const TOKEN_KEY = 'studypet.token'
+
+function readStoredToken(): string | null {
+  try {
+    return localStorage.getItem(TOKEN_KEY)
+  } catch {
+    return null
+  }
+}
+
+let authToken = readStoredToken()
+
+export function hasAuthToken(): boolean {
+  return authToken !== null
+}
+
+export function setAuthToken(token: string | null) {
+  authToken = token
+  try {
+    if (token) localStorage.setItem(TOKEN_KEY, token)
+    else localStorage.removeItem(TOKEN_KEY)
+  } catch {
+    // Sem localStorage (janela privada etc.): o login vale só até recarregar.
+  }
+}
+
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const headers: Record<string, string> = {}
+  if (body !== undefined) headers['Content-Type'] = 'application/json'
+  if (authToken) headers.Authorization = `Bearer ${authToken}`
+
   let response: Response
   try {
     response = await fetch(`/api${path}`, {
       method,
-      headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
+      headers,
       body: body === undefined ? undefined : JSON.stringify(body),
     })
   } catch {
     throw new ApiError(0, 'Não foi possível conectar à API. Ela está rodando?', null)
+  }
+
+  // Token vencido ou inválido: volta para a tela de entrada.
+  if (response.status === 401 && authToken) {
+    setAuthToken(null)
+    window.location.assign('/')
   }
 
   const text = await response.text()
@@ -70,9 +107,9 @@ type WithAchievements<T> = T & { newAchievements: AchievementSummary[] }
 export type CourseStatusFilter = 'andamento' | 'concluidos' | 'arquivados' | 'todos'
 
 export const api = {
-  createUser: (displayName: string, email: string, characterName?: string) =>
-    request<User>('POST', '/users', { displayName, email, characterName: characterName || null }),
-  signIn: (email: string) => request<User>('POST', '/users/sign-in', { email }),
+  createUser: (displayName: string, email: string, password: string, characterName?: string) =>
+    request<AuthUser>('POST', '/users', { displayName, email, password, characterName: characterName || null }),
+  signIn: (email: string, password: string) => request<AuthUser>('POST', '/users/sign-in', { email, password }),
   getUser: (userId: number) => request<User>('GET', user(userId)),
   updateDailyGoal: (userId: number, minutes: number) =>
     request<{ id: number; dailyGoalMinutes: number }>('PUT', `${user(userId)}/daily-goal`, { minutes }),

@@ -21,6 +21,7 @@ public sealed class StudyPetDbContext(DbContextOptions<StudyPetDbContext> option
             entity.HasIndex(user => user.Email).IsUnique();
             entity.Property(user => user.DisplayName).HasMaxLength(80);
             entity.Property(user => user.Email).HasMaxLength(255);
+            entity.Property(user => user.PasswordHash).HasMaxLength(256);
             entity.HasOne(user => user.Character).WithOne(character => character.User)
                 .HasForeignKey<StudyCharacter>(character => character.UserId);
         });

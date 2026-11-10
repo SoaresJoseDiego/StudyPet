@@ -40,14 +40,13 @@ export const SLIMES: Record<SlimeKind, SlimeInfo> = {
 
 export const SLIME_KINDS: SlimeKind[] = ['Lilas', 'Azul', 'Rosa', 'Rei']
 export const KING_EVERY = 60
-export const WAVE_MS = 120_000
+export const WAVE_SIZE = 4
+export const WAVE_MS = 240_000
 export const ODDS = { Lilas: 0.6, Azul: 0.28, Rosa: 0.12 } as const
-export const WAVE_SIZE_ODDS = { 1: 0.25, 2: 0.5, 3: 0.25 } as const
 
 export interface SlimeSpawn {
   wave: number
   indexInWave: number
-  waveSize: number
   kind: SlimeKind
   /** Número do slime na vida do usuário (o 60º, 120º... é Rei). */
   number: number
@@ -74,16 +73,13 @@ export function generateSlimes(seed: number, startIndex: number, untilMs: number
   let number = startIndex
 
   for (let wave = 0; wave * WAVE_MS < untilMs; wave++) {
-    const sizeRoll = random()
-    const size = sizeRoll < 0.25 ? 1 : sizeRoll < 0.75 ? 2 : 3
-
-    for (let index = 0; index < size; index++) {
+    for (let index = 0; index < WAVE_SIZE; index++) {
       number++
       const kindRoll = random()
       const kind: SlimeKind =
         number % KING_EVERY === 0 ? 'Rei' : kindRoll < 0.6 ? 'Lilas' : kindRoll < 0.88 ? 'Azul' : 'Rosa'
-      const deathMs = wave * WAVE_MS + Math.floor((WAVE_MS * (index + 1)) / size)
-      spawns.push({ wave, indexInWave: index, waveSize: size, kind, number, deathMs })
+      const deathMs = wave * WAVE_MS + Math.floor((WAVE_MS * (index + 1)) / WAVE_SIZE)
+      spawns.push({ wave, indexInWave: index, kind, number, deathMs })
     }
   }
 

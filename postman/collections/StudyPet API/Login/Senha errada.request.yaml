@@ -1,0 +1,24 @@
+$kind: http-request
+method: POST
+url: '{{baseUrl}}/api/users/sign-in'
+order: 1500
+auth:
+  type: noauth
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "{{userEmail}}",
+      "password": "senha-que-nao-e-essa"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('status 401 sem token', () => {
+        pm.response.to.have.status(401);
+        pm.expect(pm.response.json()).to.not.have.property('token');
+      });

@@ -8,8 +8,8 @@ using StudyPet.Infrastructure;
 namespace StudyPet.Api.Controllers;
 
 /// <summary>
-/// Números das telas Início, Meu pet, Histórico e Bestiário. Slimes não são gravados:
-/// são recalculados a partir dos minutos de foco de cada sessão (ver <see cref="Slimes"/>).
+/// Números das telas Início, Meu pet, Histórico e Bestiário. Os slimes de cada sessão
+/// são gravados ao concluir (ver <see cref="Slimes"/>).
 /// </summary>
 [ApiController]
 [Route("api/users/{userId:int}/stats")]

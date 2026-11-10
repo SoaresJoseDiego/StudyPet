@@ -5,6 +5,8 @@ public sealed class User
     public int Id { get; set; }
     public string DisplayName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
+    /// <summary>Hash da senha. Nulo só em contas criadas antes do login com senha.</summary>
+    public string? PasswordHash { get; set; }
     public int DailyGoalMinutes { get; set; } = 60;
     /// <summary>Total de slimes já derrotados: define quando vem o próximo Slime Rei (a cada 60).</summary>
     public int SlimesDefeated { get; set; }

@@ -5,7 +5,7 @@ public enum SlimeKind { Lilas, Azul, Rosa, Rei }
 public sealed record SlimeInfo(SlimeKind Kind, string Name, int Experience, string Rarity);
 
 /// <summary>Um slime de uma wave: quando ele é derrotado (em ms de foco) e qual o seu número total.</summary>
-public sealed record SlimeSpawn(int Wave, int IndexInWave, int WaveSize, SlimeKind Kind, int Number, int DeathMs);
+public sealed record SlimeSpawn(int Wave, int IndexInWave, SlimeKind Kind, int Number, int DeathMs);
 
 public sealed record SlimeTally(int Lilas, int Azul, int Rosa, int Rei)
 {
@@ -34,7 +34,8 @@ public sealed record SlimeTally(int Lilas, int Azul, int Rosa, int Rei)
 /// <summary>
 /// Waves de slimes (design "Pet de Estudos" + regras de aparição):
 /// <list type="bullet">
-/// <item>uma wave a cada 2 minutos de foco, com 1 slime (25%), 2 (50%) ou 3 (25%), média de 1 slime por minuto;</item>
+/// <item>waves sempre de 4 slimes, a cada 4 minutos de foco: um slime derrotado por minuto, e a próxima wave
+/// entra quando o último da anterior cai, então a cena nunca fica vazia;</item>
 /// <item>cada slime é Lilás (60%), Azul (28%) ou Rosado (12%);</item>
 /// <item>todo 60º slime derrotado pelo usuário (contando todas as sessões) é um Slime Rei.</item>
 /// </list>
@@ -44,7 +45,8 @@ public sealed record SlimeTally(int Lilas, int Azul, int Rosa, int Rei)
 public static class Slimes
 {
     public const int KingEvery = 60;
-    public const int WaveMs = 120_000;
+    public const int WaveSize = 4;
+    public const int WaveMs = 240_000;
 
     public static readonly IReadOnlyDictionary<SlimeKind, SlimeInfo> Info = new Dictionary<SlimeKind, SlimeInfo>
     {
@@ -63,18 +65,15 @@ public static class Slimes
 
         for (var wave = 0; wave * WaveMs < untilMs; wave++)
         {
-            var sizeRoll = random.Next();
-            var size = sizeRoll < 0.25 ? 1 : sizeRoll < 0.75 ? 2 : 3;
-
-            for (var index = 0; index < size; index++)
+            for (var index = 0; index < WaveSize; index++)
             {
                 number++;
                 var kindRoll = random.Next(); // sorteado sempre, para a sequência não depender do Rei
                 var kind = number % KingEvery == 0
                     ? SlimeKind.Rei
                     : kindRoll < 0.60 ? SlimeKind.Lilas : kindRoll < 0.88 ? SlimeKind.Azul : SlimeKind.Rosa;
-                var deathMs = wave * WaveMs + WaveMs * (index + 1) / size;
-                spawns.Add(new SlimeSpawn(wave, index, size, kind, number, deathMs));
+                var deathMs = wave * WaveMs + WaveMs * (index + 1) / WaveSize;
+                spawns.Add(new SlimeSpawn(wave, index, kind, number, deathMs));
             }
         }
 
