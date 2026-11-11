@@ -1082,8 +1082,16 @@ input[aria-invalid='true'] {
 }
 
 .scene-slime {
+  --slime-size: calc(var(--slime-base) * var(--slime-scale, 1));
   position: absolute;
+  width: var(--slime-size);
+  height: var(--slime-size);
+}
 
+.scene-slime > div svg {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
 .scene-burst {
@@ -1155,9 +1163,19 @@ input[aria-invalid='true'] {
   background: rgba(238, 247, 242, 0.72);
 }
 
-.slime-hop {
+.slime-jump {
   transform-origin: 50% 100%;
-  animation: slimehop 600ms ease-in-out infinite;
+  animation: slimejump 620ms ease-in-out infinite;
+}
+
+.slime-wait {
+  transform-origin: 50% 100%;
+  animation: slimehop 620ms ease-in-out infinite;
+}
+
+.slime-charge {
+  transform-origin: 50% 100%;
+  animation: slimejump 460ms ease-in-out infinite;
 }
 
 .slime-rest {
@@ -1198,10 +1216,26 @@ input[aria-invalid='true'] {
 @keyframes slimehop {
   0%,
   100% {
-    transform: translateY(0) scale(1.06, 0.92);
+    transform: translateY(0) scale(1.08, 0.9);
   }
   50% {
-    transform: translateY(-14px) scale(0.95, 1.05);
+    transform: translateY(-26px) scale(0.95, 1.06);
+  }
+}
+
+@keyframes slimejump {
+  0%,
+  100% {
+    transform: translateY(0) scale(1.14, 0.84);
+  }
+  20% {
+    transform: translateY(-20px) scale(0.9, 1.12);
+  }
+  50% {
+    transform: translateY(-62px) scale(0.97, 1.04);
+  }
+  80% {
+    transform: translateY(-20px) scale(0.92, 1.1);
   }
 }
 
@@ -1462,7 +1496,9 @@ input[aria-invalid='true'] {
   .pet-ear-r,
   .pet-lunge,
   .pet-evolve,
-  .slime-hop,
+  .slime-jump,
+  .slime-wait,
+  .slime-charge,
   .slime-rest,
   .exp-pop {
     animation: none !important;
@@ -1539,6 +1575,7 @@ input[aria-invalid='true'] {
   }
 
   .scene {
+    --slime-scale: 0.74;
     height: 400px;
   }
 
@@ -2055,10 +2092,10 @@ textarea {
   margin-bottom: -4px;
 }
 
-/* ---------- Batalha: waves e caminhada suave ---------- */
+/* ---------- Batalha: waves e deslocamento suave ---------- */
 
-.scene-slime-walk {
-  animation-name: slimewalk;
+.scene-slime-travel {
+  animation-name: slimetravel;
   animation-timing-function: linear;
   animation-fill-mode: both;
   will-change: left;
@@ -2068,12 +2105,12 @@ textarea {
   left: var(--pet-zone);
 }
 
-@keyframes slimewalk {
+@keyframes slimetravel {
   from {
-    left: calc(100% - var(--slime-size) - 16px);
+    left: var(--travel-from);
   }
   to {
-    left: var(--pet-zone);
+    left: var(--travel-to);
   }
 }
 

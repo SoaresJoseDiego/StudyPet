@@ -4,12 +4,19 @@ import { Pet } from './Pet'
 import { Slime } from './Slime'
 
 // Cena "Web · Batalha" do design. Os slimes chegam em waves de 4 (ver slimes.ts): todos nascem
-// juntos na cerca quando a wave começa e cada um caminha no seu ritmo para chegar ao pet no seu
-// `deathMs`, um por minuto. A wave seguinte entra quando o último cai, então a cena nunca esvazia.
-// A caminhada é uma animação CSS contínua (suave, 60 fps), sincronizada com o tempo de foco quando
-// o slime aparece e congelada na pausa; o estado de cada slime (andando, morrendo) vem de `focusMs`.
+// juntos na cerca quando a wave começa, entram pulando até o campo, seguem avançando devagar,
+// sempre para frente, e cada um dá o bote para chegar ao pet no seu `deathMs`, um por minuto.
+// A wave seguinte entra quando o último cai, então a cena nunca esvazia. Os deslocamentos são
+// animações CSS (suaves, 60 fps), sincronizadas com o tempo de foco ao montar e congeladas na
+// pausa; a etapa de cada slime (entrando, na fila, no bote, morrendo) vem de `focusMs`.
 
 const PET_ZONE = 236 // px reservados ao pet à esquerda
+const ENTER_MS = 15_000
+const CHARGE_MS = 4_000
+/** Onde cada slime da wave termina a entrada: 0 é o pet, 1 é a cerca. O primeiro a cair fica mais perto. */
+const QUEUE_SLOTS = [0.35, 0.55, 0.75, 0.9]
+/** Até que fração da sua posição inicial o slime avança antes do bote. */
+const ADVANCE_RATIO = 0.4
 const DIE_MS = 400
 const BURST_MS = 320
 const POP_MS = 1_200
@@ -72,7 +79,7 @@ export function BattleScene({ focusMs, paused, active, stage, spawns = [], badge
 
       {visible.map((spawn) =>
         focusMs < spawn.deathMs ? (
-          <WalkingSlime key={spawn.number} spawn={spawn} focusMs={focusMs} paused={paused} />
+          <ApproachingSlime key={spawn.number} spawn={spawn} focusMs={focusMs} paused={paused} />
         ) : (
           <DyingSlime key={spawn.number} spawn={spawn} burst={focusMs < spawn.deathMs + BURST_MS} />
         ),
@@ -88,40 +95,83 @@ export function BattleScene({ focusMs, paused, active, stage, spawns = [], badge
 }
 
 function slimeSize(kind: SlimeKind) {
-  return kind === 'Rei' ? 136 : 92
+  return kind === 'Rei' ? 176 : 124
 }
 
 function laneStyle(spawn: SlimeSpawn): CSSProperties {
-  const size = slimeSize(spawn.kind)
   const lane = spawn.kind === 'Rei' ? 0 : LANES[spawn.indexInWave % LANES.length]
   return {
     bottom: 44 + lane,
-    width: size,
-    height: size,
     zIndex: 60 - lane,
-    ['--slime-size' as string]: `${size}px`,
+    ['--slime-base' as string]: `${slimeSize(spawn.kind)}px`,
     ['--pet-zone' as string]: `${PET_ZONE}px`,
   }
 }
 
-/** Caminha da cerca até o pet com animação CSS. O atraso negativo é fixado ao montar. */
-function WalkingSlime({ spawn, focusMs, paused }: { spawn: SlimeSpawn; focusMs: number; paused: boolean }) {
+/** Ponto do caminho entre o pet (0) e a cerca (1), como valor CSS de `left`. */
+function trackPosition(fraction: number) {
+  return `calc(var(--pet-zone) + (100% - var(--pet-zone) - var(--slime-size) - 16px) * ${fraction})`
+}
+
+interface SlimeMotionProps {
+  spawn: SlimeSpawn
+  focusMs: number
+  paused: boolean
+}
+
+/** Escolhe o trecho do slime vivo: entrando pela cerca, avançando pelo campo ou dando o bote. */
+function ApproachingSlime({ spawn, focusMs, paused }: SlimeMotionProps) {
   const spawnMs = spawn.wave * WAVE_MS
-  // Quanto o slime já andou quando apareceu na tela (ao retomar uma sessão, ele volta no meio do caminho).
-  const [walkedAtMount] = useState(() => focusMs - spawnMs)
+  const slotFraction = QUEUE_SLOTS[spawn.indexInWave % QUEUE_SLOTS.length]
+  const slot = trackPosition(slotFraction)
+  const advanced = trackPosition(slotFraction * ADVANCE_RATIO)
+  const advanceStart = spawnMs + ENTER_MS
+  const chargeStart = spawn.deathMs - CHARGE_MS
+  const motion = { spawn, focusMs, paused }
+
+  if (focusMs < advanceStart) {
+    return <TravelingSlime key="enter" {...motion} from={trackPosition(1)} to={slot} startMs={spawnMs} durationMs={ENTER_MS} hop="slime-jump" />
+  }
+  if (focusMs < chargeStart) {
+    return <TravelingSlime key="advance" {...motion} from={slot} to={advanced} startMs={advanceStart} durationMs={chargeStart - advanceStart} hop="slime-wait" />
+  }
+  return <TravelingSlime key="charge" {...motion} from={advanced} to={trackPosition(0)} startMs={chargeStart} durationMs={CHARGE_MS} hop="slime-charge" />
+}
+
+interface TravelingSlimeProps extends SlimeMotionProps {
+  from: string
+  to: string
+  startMs: number
+  durationMs: number
+  hop: string
+}
+
+/** Desloca o slime com animação CSS. O atraso negativo é fixado ao montar. */
+function TravelingSlime({ spawn, focusMs, paused, from, to, startMs, durationMs, hop }: TravelingSlimeProps) {
+  // Quanto do trecho já passou ao aparecer na tela (ao retomar uma sessão, ele volta no meio do caminho).
+  const [elapsedAtMount] = useState(() => focusMs - startMs)
   return (
     <div
-      className="scene-slime scene-slime-walk"
+      className="scene-slime scene-slime-travel"
       style={{
         ...laneStyle(spawn),
-        animationDuration: `${spawn.deathMs - spawnMs}ms`,
-        animationDelay: `${-walkedAtMount}ms`,
+        ['--travel-from' as string]: from,
+        ['--travel-to' as string]: to,
+        animationDuration: `${durationMs}ms`,
+        animationDelay: `${-elapsedAtMount}ms`,
         animationPlayState: paused ? 'paused' : 'running',
       }}
     >
-      <div className={paused ? 'slime-rest' : 'slime-hop'}>
-        <Slime kind={spawn.kind} size={slimeSize(spawn.kind)} />
-      </div>
+      <HoppingSlime spawn={spawn} paused={paused} hop={hop} />
+    </div>
+  )
+}
+
+/** Os pulos ficam defasados entre os slimes para a wave não saltar em uníssono. */
+function HoppingSlime({ spawn, paused, hop }: { spawn: SlimeSpawn; paused: boolean; hop: string }) {
+  return (
+    <div className={paused ? 'slime-rest' : hop} style={{ animationDelay: `${-spawn.indexInWave * 137}ms` }}>
+      <Slime kind={spawn.kind} size={slimeSize(spawn.kind)} />
     </div>
   )
 }
@@ -150,7 +200,7 @@ function DyingSlime({ spawn, burst }: { spawn: SlimeSpawn; burst: boolean }) {
 /** Balão "+N Exp" com as cores de cada slime (design "Sistema de Exp"). */
 function ExpPop({ kind, offset }: { kind: SlimeKind; offset: number }) {
   return (
-    <div className={`exp-pop scene-pop pop-${kind}`} aria-hidden="true" style={{ bottom: (kind === 'Rei' ? 230 : 180) + offset * 34 }}>
+    <div className={`exp-pop scene-pop pop-${kind}`} aria-hidden="true" style={{ bottom: (kind === 'Rei' ? 285 : 230) + offset * 34 }}>
       {kind === 'Rei' && (
         <svg viewBox="0 0 40 22" width="36" height="20" className="pop-crown">
           <path d="M4 20 L7 4 L15 12 L20 2 L25 12 L33 4 L36 20 Z" fill="#FBE7A8" stroke="#C99F45" strokeWidth="3" strokeLinejoin="round" />

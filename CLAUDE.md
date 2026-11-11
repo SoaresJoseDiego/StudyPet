@@ -87,7 +87,7 @@ The core loop lives in `StudySessionsController`:
   - Pauses are tracked only in the browser (`localStorage` key `studypet.pause.<sessionId>`). On finish, `floor(focus seconds)` is sent, and a slime only counts once its `deathMs` has passed.
 - The whole UI follows the user's claude.ai design canvas "Pet de Estudos" (https://claude.ai/artifact/1FqoBbMeaiTJ5qV1zJ67xg). Its "Versão web" artboards map to pages: Web-Inicio → `DashboardPage`, Web-Batalha → `StudyPage` (`/estudar`), Web-Pet → `PetPage`, Web-Historico → `HistoryPage`, Web-Bestiario → `BestiaryPage`, and Sidebar → `Layout`. Cursos and Ajustes are app-only screens. When the design changes, re-read the canvas files and port them instead of redrawing.
   - `Pet.tsx` and `Slime.tsx` are the canvas SVGs, converted to JSX.
-  - `BattleScene.tsx` is derived from `focusMs`. A wave's 4 slimes spawn together at the fence, each walks at its own pace and dies exactly at its `deathMs`, which is when it starts counting Exp.
+  - `BattleScene.tsx` is derived from `focusMs`. A wave's 4 slimes spawn together at the fence, hop into the field, keep advancing (always forward), and each charges to die exactly at its `deathMs`, which is when it starts counting Exp.
   - `slimes.ts` and `progression.ts` mirror the backend rules, so the Exp, form and evolution banner can be previewed live during a session. The API's finish response is authoritative.
   - The palette (mint/teal) and fonts (Baloo 2 headings, Nunito body) are CSS variables in `index.css`, with dark mode via `prefers-color-scheme`.
 - Keep component files exporting only components (oxlint `only-export-components`). Helpers go in `format.ts`, and hooks/context go in `session-context.ts`.
